@@ -44,3 +44,22 @@ body {
 #app {
   height: 100%;
 }
+
+/* Portrait-mode warning for mobile browsers */
+@media (max-width: 600px) and (orientation: portrait) {
+  body::before {
+    content: 'Rotate your device to landscape for the best experience.';
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: #0d0d0d;
+    color: #00d4aa;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1rem;
+    text-align: center;
+  }
+}

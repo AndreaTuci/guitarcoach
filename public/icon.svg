@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="88" fill="#0d0d0d"/>
+
+  <!-- Headstock (wider rectangle at top) -->
+  <rect x="220" y="36" width="72" height="38" rx="8" fill="#00d4aa"/>
+  <!-- Neck (narrower, connects headstock to body) -->
+  <rect x="240" y="70" width="32" height="164" rx="6" fill="#00d4aa"/>
+
+  <!-- Guitar body -->
+  <path d="M 256,226
+           C 302,224 342,256 342,294
+           C 342,328 318,340 318,352
+           C 318,366 372,380 372,418
+           C 372,462 318,490 256,490
+           C 194,490 140,462 140,418
+           C 140,380 194,366 194,352
+           C 194,340 170,328 170,294
+           C 170,256 210,224 256,226 Z"
+        fill="#00d4aa"/>
+
+  <!-- Sound hole -->
+  <circle cx="256" cy="404" r="44" fill="#0d0d0d"/>
+</svg>

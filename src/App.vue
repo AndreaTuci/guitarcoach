@@ -19,7 +19,15 @@
     }
   }
 
-  onMounted(() => window.addEventListener('keydown', onKeydown))
+  onMounted(() => {
+    window.addEventListener('keydown', onKeydown)
+    if (
+      window.matchMedia('(display-mode: standalone)').matches &&
+      screen.orientation?.lock
+    ) {
+      screen.orientation.lock('landscape').catch(() => {})
+    }
+  })
   onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 </script>
 
