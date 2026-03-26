@@ -75,10 +75,10 @@ export function useMetronome() {
     schedulerTimer = setTimeout(scheduleBeats, SCHEDULER_MS)
   }
 
-  function start(): void {
+  function start(atTime?: number): void {
     if (isRunning.value) return
     const audioCtx = getAudioContext()
-    nextBeatTime = audioCtx.currentTime
+    nextBeatTime = atTime ?? audioCtx.currentTime
     beatIndex = 0
     isRunning.value = true
     scheduleBeats()

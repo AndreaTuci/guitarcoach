@@ -130,6 +130,7 @@
       :scheduled-bars="session.scheduledBars.value"
       :bar-results="session.barResults.value"
       :is-running="session.isRunning.value"
+      :session-bpm="session.sessionBpm.value"
     />
 
     <!-- Session summary (after completion) -->

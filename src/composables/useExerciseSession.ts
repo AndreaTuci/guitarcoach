@@ -34,6 +34,7 @@ export function useExerciseSession(
   const scheduledBars = ref<ScheduledBar[]>([])
   const barResults = ref(new Map<number, BeatResult>())
   const sessionStartAudioTime = ref<number | null>(null)
+  const sessionBpm = ref(0)
 
   // Buffers for scoring
   const onsetBuffer: OnsetEvent[] = []
@@ -159,6 +160,7 @@ export function useExerciseSession(
     const startTime = ctx.currentTime + 0.3
 
     sessionStartAudioTime.value = startTime
+    sessionBpm.value = metro.bpm
     scheduledBars.value = buildSchedule(exercise.value, startTime, metro.bpm)
     barResults.value = new Map()
     onsetBuffer.length = 0
@@ -166,7 +168,7 @@ export function useExerciseSession(
     isComplete.value = false
     isRunning.value = true
 
-    if (!metro.isRunning) metro.start()
+    if (!metro.isRunning) metro.start(startTime)
 
     sessionStore.startSession(exercise.value.id)
     sessionId = sessionStore.active?.id ?? ''
@@ -198,6 +200,7 @@ export function useExerciseSession(
     scheduledBars.value = []
     barResults.value = new Map()
     sessionStartAudioTime.value = null
+    sessionBpm.value = 0
   }
 
   const completedBarCount = computed(() => barResults.value.size)
@@ -210,6 +213,7 @@ export function useExerciseSession(
     scheduledBars,
     barResults,
     sessionStartAudioTime,
+    sessionBpm,
     completedBarCount,
     start,
     stop,

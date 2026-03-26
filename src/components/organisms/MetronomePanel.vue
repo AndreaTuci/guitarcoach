@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import { onMounted, onUnmounted } from 'vue'
+  import { storeToRefs } from 'pinia'
   import { useMetronomeStore } from '@/stores/metronome'
   import { useUiStore } from '@/stores/ui'
   import BeatIndicator from '@/components/atoms/BeatIndicator.vue'
@@ -7,8 +8,9 @@
   import TapTempoButton from '@/components/atoms/TapTempoButton.vue'
   import SubdivisionSelector from '@/components/atoms/SubdivisionSelector.vue'
 
-  const { bpm, isRunning, currentBeat, beatsPerBar, subdivision, accentBeat1, toggle, setBpm } =
-    useMetronomeStore()
+  const metronome = useMetronomeStore()
+  const { bpm, isRunning, currentBeat, beatsPerBar, subdivision, accentBeat1 } = storeToRefs(metronome)
+  const { toggle, setBpm } = metronome
   const ui = useUiStore()
 
   function onKeydown(e: KeyboardEvent) {
