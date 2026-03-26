@@ -48,8 +48,10 @@ export function useAudioInput() {
     sourceNode = ctx.createMediaStreamSource(stream)
 
     const analyser = ctx.createAnalyser()
-    analyser.fftSize = 2048
-    analyser.smoothingTimeConstant = 0
+    analyser.fftSize = 4096            // Higher resolution: ~10.8 Hz/bin vs 21.5 Hz/bin
+    analyser.smoothingTimeConstant = 0 // No smoothing — chord detector averages its own window
+    analyser.minDecibels = -100        // Full dB range for getFloatFrequencyData()
+    analyser.maxDecibels = 0
     sourceNode.connect(analyser)
 
     analyserNode.value = analyser

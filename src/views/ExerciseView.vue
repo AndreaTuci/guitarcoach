@@ -25,7 +25,7 @@
   const { isListening, permissionState, analyserNode, start: startMic, stop: stopMic } =
     useAudioInput()
   const { lastOnset, currentRms } = useOnsetDetector(analyserNode)
-  const { detectedChord, confidence } = useChordDetector(analyserNode)
+  const { detectedChord, confidence, stringStates } = useChordDetector(analyserNode)
 
   // Session
   const session = useExerciseSession(exercise, lastOnset, detectedChord)
@@ -239,6 +239,7 @@
         v-if="isListening"
         :chord="detectedChord"
         :confidence="confidence"
+        :string-states="stringStates"
       />
     </div>
 

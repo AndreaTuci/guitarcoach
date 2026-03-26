@@ -1,53 +1,148 @@
-# Chord Detection — Calibration Notes
+# Chord Detection — Architecture & Calibration Notes
 
 Last updated: 2026-03-26
-Mic used during testing: built-in laptop mic (poor quality, noisy environment)
+Mic used during testing: built-in laptop mic (noisy environment, no headphones)
 
 ---
 
-## How it works
+## Architecture (current — v2)
 
-1. `AnalyserNode.getByteFrequencyData()` → FFT frame (Uint8Array, 1024 bins)
-2. Energy gate: skip frame if mean energy in 65–2000 Hz range < `MIN_ENERGY` (currently 18)
-3. `buildChromagram()` → 12-bin pitch class profile, L∞ normalised
-4. Frames aggregated into a 500ms ring buffer
-5. Buffer averaged → `matchChord()` → cosine similarity vs chord templates
-6. Margin check: best must beat second-best by ≥ 0.05, else reported as ambiguous
-7. Confidence < 0.5 → shown as "?" in UI
+### Pipeline
+
+```
+AnalyserNode (fftSize=4096, minDecibels=−100, maxDecibels=0)
+    │
+    │  getFloatFrequencyData() every 33 ms (~30 fps)
+    ↓
+guitarSpectralContrast()
+    ├── peakDb in 80–600 Hz range
+    └── contrast = peak − median in 80–600 Hz range
+
+    ┌── GATE 1: peakDb < −52 dB  → skip frame (too quiet)
+    ├── GATE 2: contrast < 12 dB → skip frame (spectrally flat — noise or metronome sine)
+    │
+    ↓ (frame passed gates)
+buildChromagram()
+    ├── dB → linear amplitude (referenced to −80 dB noise floor)
+    ├── Map each bin to pitch class (0=C … 11=B)
+    └── L² normalize
+
+    → 12-bin chroma vector pushed into ring buffer (up to 30 frames)
+
+    every 200 ms:
+    average chroma buffer → matchChord() → cosine similarity vs templates
+
+    ┌── GATE 3: confidence < 0.50  → null
+    ├── GATE 4: temporal stability — same chord must appear in 2 consecutive
+    │           200 ms windows before being reported (kills transients)
+    │
+    ↓ (chord confirmed)
+detectSoundingStrings()
+    └── For each sounding string in the chord voicing, check energy in a
+        ±18 Hz window around its expected fundamental.
+        Returns 'sounding' | 'deaf' | 'muted' per string.
+
+Output: detectedChord, confidence, stringStates[6]
+```
+
+### Why float frequency data (v2 key change)
+
+The old `getByteFrequencyData()` used default `minDecibels=−100, maxDecibels=−30`. With these
+defaults, byte value 18 corresponds to approximately −95 dB — essentially silence. The gate
+was therefore near-useless.
+
+`getFloatFrequencyData()` returns actual dB values. The new gate requires `peakDb > −52 dB`
+which corresponds to a clearly audible signal, well above room noise.
+
+### Why spectral contrast (v2 key change)
+
+Root cause of the A-during-silence bug:
+- The metronome click sound is a 900 Hz sine wave (A5).
+- 900 Hz maps to pitch class A.
+- Cosine similarity of a pure A pitch class against the A chord template ≈ 0.74 — above the
+  confidence threshold.
+- The old energy gate did not distinguish between a tonal sine and a guitar chord.
+
+Spectral contrast fix: a 900 Hz sine wave in the 80–600 Hz band produces one small peak
+(perhaps none at all, since 900 Hz is outside that range). A guitar chord has multiple harmonic
+peaks in that band, giving high contrast. The contrast gate blocks the sine.
+
+Background room noise is spectrally flat (low contrast) and is blocked even if the absolute
+level is high (e.g., a loud A/C unit).
+
+### Why temporal stability (v2 key change)
+
+A metronome click lasts ~50 ms. Even if it slipped through the spectral gate, it cannot produce
+the same chord in two consecutive 200 ms detection windows, so `STABILITY_COUNT = 2` eliminates
+it entirely. This also smooths genuine chord transitions — a new chord is only reported after it
+has been detected twice (400 ms delay on chord change, which is imperceptible in practice).
+
+### Per-string detection
+
+For each chord in the curriculum the exact fundamental frequency of every sounding string is
+known from the chord voicing (see `chordNotes.ts`). After the chord is confirmed, each string's
+fundamental bin is checked in a ±18 Hz window. If the peak dB in that window is below −60 dB,
+the string is classified as **deaf** — it should ring but doesn't.
+
+This enables Yousician-style feedback: "G string not ringing — press harder on fret 1."
+
+String states are exposed as `StringState[] = ('sounding' | 'deaf' | 'muted')[]` and displayed
+as 6 coloured dots in `ChordDisplay.vue`.
 
 ---
 
-## Per-chord status
+## Per-chord status (v2)
 
 | Chord | Status | Notes |
 |-------|--------|-------|
-| **Em** | ✅ Working | G(7)=2.0 is the key weight — distinguishes from E major |
-| **Am** | ✅ Working | A(9) root dominates clearly |
-| **G**  | ✅ Working | G(7)=2.0 + B(11)=1.5 give a clean profile |
-| **C**  | ⚠️ Unreliable | E(4) is the loudest note in the open C voicing (3 strings), so E and C are both set to 1.5. On poor mics the C root often doesn't come through strongly — easily confused with Am. May need per-device calibration. |
-| **D**  | ⚠️ Sometimes missed | F#(6) raised to 2.0 (B string 2nd fret). On a noisy mic the F# bin is weak and the chord can be swallowed by the energy gate. Try sustaining the chord longer. |
-| **A**  | ⚠️ False positives | Was detecting A on silence/noise. Fixed by raising energy gate to 18 and the margin check. Still the most fragile template — C#(1) is the distinguishing note from Am but it's a quiet overtone. |
-| **E**  | ✅ Working | B(11)=2.0 separates it from Em (which has G instead of G#/B). |
-| **Dm** | ⚠️ Confused with F | Dm and F share F(5) and A(9). Fix: D(2)=2.5 in Dm, F(5)=0.5. If the open D string doesn't ring clearly (muted or weak mic), the remaining F+A looks like F major. Needs clean playing. |
-| **F**  | ⚠️ Hard to detect | Barre chord — requires full barre press. F(5)=2.5. On poor mics the barre mutes some strings and the chromagram is weak. Energy gate may drop its frames. Try pressing harder and sustaining. |
+| **Em** | ✅ Good | G(7)=2.0 distinguishes from E. All 6 strings have clear, well-separated fundamentals. |
+| **Am** | ✅ Good | A(9)=2.0. 5 strings; E6 muted. C(0) is the distinguishing note from Am vs Em. |
+| **G**  | ✅ Good | G(7)=2.0 + B(11)=1.5. G2 at 98 Hz now better resolved with fftSize=4096 (was 2 bins at 2048). |
+| **C**  | ⚠️ Unreliable | E(4) and C(0) both 1.5. E is the loudest note in open C voicing. Confused with Am on poor mics because C root (130 Hz on A string) is often weak. Deaf string check helps: if A string (130 Hz, C3) is deaf → likely Am not C. |
+| **D**  | ⚠️ Sometimes missed | F#(6)=2.0 (B string 2nd fret, 370 Hz). Now better resolved at 4096. Still needs the F# to ring clearly. |
+| **A**  | ✅ Improved | Was the main false-positive culprit. Fixed by spectral contrast gate (metronome at 900 Hz = A5 no longer triggers it) and temporal stability. C#(1)=1.5 is the distinguishing note from Em. |
+| **E**  | ✅ Good | B(11)=2.0 clearly separates from Em (Em has G minor-third instead). |
+| **Dm** | ⚠️ Confused with F | D(2)=2.5 to anchor Dm. If D string (open, 147 Hz) is deaf, D root disappears and Dm looks like F. String status will flag this. |
+| **F**  | ⚠️ Hard | Barre chord. Requires all 6 strings pressed simultaneously. F(5)=2.5. String status dots are the most useful feedback here — typically one or two strings are deaf on an imperfect barre. |
 
 ---
 
-## Known issues to revisit
+## String frequency reference (standard EADGBE)
 
-- **C vs Am** — both have C and E. Distinguishing feature is G(7) in C vs A(9) in Am. If the G string doesn't ring cleanly in C, the detector leans toward Am. Could try looking at absence of A(9) as a negative signal.
-- **D and F missed on noisy mic** — `MIN_ENERGY = 18` may be too high for some setups. Consider making this configurable or auto-calibrating from the noise floor on mic start.
-- **Margin check may be too aggressive** — some chords that should detect cleanly get killed by the 0.05 margin. Consider lowering to 0.03 if too many "?" results.
-- **F# in D chord** — the F# fundamental at ~370 Hz should be clear but chromagram bin resolution at that frequency is ~21 Hz/bin, so neighbouring bins bleed. Could try weighting F# and its octave (F#5) together.
-- **General** — a harmonic weighting approach (weighting each bin by harmonic series of its fundamental) would improve all chords. Deferred — current approach is good enough for the rhythm/timing use case where chord detection is a secondary signal.
+All values in Hz. Source: `chordNotes.ts`.
+
+| Chord | E2(6th) | A2(5th) | D3(4th) | G3(3rd) | B3(2nd) | E4(1st) |
+|-------|---------|---------|---------|---------|---------|---------|
+| Em    | 82.4    | 123.5   | 164.8   | 196.0   | 246.9   | 329.6   |
+| Am    | muted   | 110.0   | 164.8   | 220.0   | 261.6   | 329.6   |
+| G     | 98.0    | 123.5   | 146.8   | 196.0   | 246.9   | 392.0   |
+| C     | muted   | 130.8   | 164.8   | 196.0   | 261.6   | 329.6   |
+| D     | muted   | muted   | 146.8   | 220.0   | 293.7   | 370.0   |
+| A     | muted   | 110.0   | 164.8   | 220.0   | 277.2   | 329.6   |
+| E     | 82.4    | 123.5   | 164.8   | 207.7   | 246.9   | 329.6   |
+| Dm    | muted   | muted   | 146.8   | 220.0   | 293.7   | 349.2   |
+| F     | 87.3    | 130.8   | 174.6   | 220.0   | 261.6   | 349.2   |
 
 ---
 
 ## Tuning knobs
 
-| Parameter | Location | Current value | Effect |
-|-----------|----------|---------------|--------|
-| `MIN_ENERGY` | `useChordDetector.ts` | 18 | Raise to reduce noise false positives; lower if weak mic misses all chords |
-| `MIN_CONFIDENCE` | `useChordDetector.ts` | 0.5 | Raise for fewer but more accurate results |
-| `MIN_MARGIN` | `chordMatcher.ts` | 0.05 | Raise if ambiguous chords slip through; lower if too many "?" |
-| `WINDOW_MS` | `useChordDetector.ts` | 500ms | Raise for more stable detection on sustained chords; lower for faster response |
+| Parameter | File | Current value | Effect |
+|-----------|------|---------------|--------|
+| `MIN_PEAK_DB` | `useChordDetector.ts` | −52 dB | Absolute signal floor. Raise if noise still passes; lower if guitar is not being detected at all. |
+| `MIN_CONTRAST_DB` | `useChordDetector.ts` | 12 dB | Spectral contrast floor. Raise to block more noise; lower if soft chords are missed. |
+| `MIN_CONFIDENCE` | `useChordDetector.ts` | 0.50 | Cosine similarity floor for accepting a chord match. |
+| `STABILITY_COUNT` | `useChordDetector.ts` | 2 | Consecutive windows required. Raise to 3 for more stability at the cost of ~200 ms extra latency. |
+| `MIN_MARGIN` | `chordMatcher.ts` | 0.05 | Best match must beat second-best by this margin. Raise if ambiguous chords leak through. |
+| `DEAF_THRESHOLD_DB` | `chordNotes.ts` | −60 dB | String energy floor for per-string detection. Lower if strings are being flagged as deaf even when ringing. |
+| `fftSize` | `useAudioInput.ts` | 4096 | Bin width: 44100/4096 ≈ 10.8 Hz. Do not lower below 4096 — E2 and A2 are only 28 Hz apart and need at least 2–3 bin separation. |
+
+---
+
+## Known remaining issues
+
+- **C vs Am** — Both share C, E, G. The distinguishing feature is the A root in Am vs C root in C. The per-string check (is the A5 string at 110 Hz sounding?) may help: Am plays A string open; C mutes E6 and frets A string at 130 Hz. These are different frequencies and now distinguishable with fftSize=4096.
+- **D and F#** — F# at 370 Hz is the key D chord note. Now 2–3 bins wide at 4096. If the B string isn't pressed cleanly it won't appear, causing D to be missed.
+- **F barre chord** — Fundamentally hard. A clean barre press is required. The per-string dots showing which strings are deaf are the most useful feedback.
+- **Metronome picked up by mic** — Fixed by spectral contrast + temporal stability. But if the user is playing very quietly and the metronome is at full volume through speakers, the metronome may still pollute the chromagram in the buffer. Using headphones eliminates this entirely.
+- **Harmonic overlap** — The 3rd harmonic of E2 (82×3=246 Hz) falls on B3. The 2nd harmonic of A2 (110×2=220 Hz) falls on A3. These overlaps are reduced by the temporal averaging and by using float data with a proper noise floor, but a full harmonic product spectrum (HPS) approach would eliminate them. Deferred — current accuracy is sufficient for the rhythm/strumming use case.
