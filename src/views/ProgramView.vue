@@ -3,7 +3,7 @@
 </script>
 
 <template>
-  <div class="mx-auto max-w-5xl px-6 py-10">
+  <div class="mx-auto max-w-5xl px-6 py-10" aria-label="Program timeline">
     <h1 class="mb-8 text-2xl font-bold text-white">8-Week Program</h1>
     <ProgramTimeline />
   </div>

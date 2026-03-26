@@ -1,5 +1,8 @@
 <script setup lang="ts">
   import { RouterLink } from 'vue-router'
+  import { useUiStore } from '@/stores/ui'
+
+  const ui = useUiStore()
 </script>
 
 <template>
@@ -38,5 +41,14 @@
         Songs
       </RouterLink>
     </div>
+
+    <button
+      class="ml-auto rounded-md border border-[var(--color-border)] px-2 py-1 font-mono text-xs text-[var(--color-inactive)] transition-colors hover:border-[var(--color-accent)] hover:text-white"
+      aria-label="Show keyboard shortcuts"
+      title="Keyboard shortcuts"
+      @click="ui.toggleShortcuts"
+    >
+      ?
+    </button>
   </nav>
 </template>

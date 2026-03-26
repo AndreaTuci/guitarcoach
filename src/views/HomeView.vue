@@ -37,7 +37,7 @@
 <template>
   <div class="mx-auto max-w-3xl px-6 py-10 space-y-10">
     <!-- Progress header -->
-    <section class="flex items-center gap-6">
+    <section class="flex items-center gap-6" aria-label="Overall progress">
       <div class="relative flex items-center justify-center">
         <ProgressRing :percent="program.completionPercent" :size="88" :stroke-width="6" />
         <span class="absolute font-mono text-lg font-bold text-white">
@@ -53,7 +53,7 @@
     </section>
 
     <!-- Next exercise -->
-    <section v-if="program.nextUnlockedExercise">
+    <section v-if="program.nextUnlockedExercise" aria-label="Next exercise">
       <h2 class="mb-3 text-xs font-semibold uppercase tracking-widest text-[var(--color-inactive)]">
         Up Next
       </h2>
@@ -68,7 +68,7 @@
     </section>
 
     <!-- Session history -->
-    <section v-if="recentSessions.length > 0">
+    <section v-if="recentSessions.length > 0" aria-label="Recent sessions">
       <h2 class="mb-3 text-xs font-semibold uppercase tracking-widest text-[var(--color-inactive)]">
         Recent Sessions
       </h2>
