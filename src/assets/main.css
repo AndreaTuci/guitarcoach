@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@theme {
+  /* Surfaces */
+  --color-background: #0d0d0d;
+  --color-surface: #1a1a1a;
+  --color-surface-raised: #242424;
+  --color-border: #2e2e2e;
+
+  /* Accent */
+  --color-accent: #00d4aa;
+  --color-accent-dim: #00a882;
+
+  /* Status */
+  --color-perfect: #22c55e;
+  --color-good: #f59e0b;
+  --color-miss: #ef4444;
+  --color-inactive: #4b4b4b;
+
+  /* Chord colors (one per chord, consistent across the app) */
+  --color-chord-em: #6366f1;
+  --color-chord-am: #ec4899;
+  --color-chord-g: #22c55e;
+  --color-chord-c: #f59e0b;
+  --color-chord-d: #3b82f6;
+  --color-chord-a: #a855f7;
+  --color-chord-e: #14b8a6;
+  --color-chord-dm: #f97316;
+  --color-chord-f: #e11d48;
+
+  /* Typography */
+  --font-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+html,
+body {
+  background-color: var(--color-background);
+  color: #e5e5e5;
+  font-family: var(--font-sans);
+  height: 100%;
+}
+
+#app {
+  height: 100%;
+}
