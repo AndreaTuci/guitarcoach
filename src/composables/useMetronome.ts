@@ -18,6 +18,7 @@ export function useMetronome() {
   const currentBeat = ref(0)       // 0-indexed, resets each bar
   const subdivision = ref<Subdivision>('quarter')
   const accentBeat1 = ref(true)
+  const startAudioTime = ref(0)    // AudioContext time when last started
 
   let nextBeatTime = 0             // AudioContext time of next scheduled beat
   let beatIndex = 0                // Beat counter (wraps at beatsPerBar)
@@ -78,7 +79,9 @@ export function useMetronome() {
   function start(atTime?: number): void {
     if (isRunning.value) return
     const audioCtx = getAudioContext()
-    nextBeatTime = atTime ?? audioCtx.currentTime
+    const time = atTime ?? audioCtx.currentTime
+    nextBeatTime = time
+    startAudioTime.value = time
     beatIndex = 0
     isRunning.value = true
     scheduleBeats()
@@ -112,6 +115,7 @@ export function useMetronome() {
     beatsPerBar,
     subdivision,
     accentBeat1,
+    startAudioTime,
     start,
     stop,
     toggle,
