@@ -8,6 +8,15 @@
 
   const ui = useUiStore()
 
+  async function acquireWakeLock() {
+    if (!('wakeLock' in navigator)) return
+    try {
+      await (navigator as Navigator & { wakeLock: { request(t: string): Promise<void> } }).wakeLock.request('screen')
+    } catch {
+      // Not supported or denied — fail silently
+    }
+  }
+
   function onKeydown(e: KeyboardEvent) {
     const tag = (e.target as HTMLElement).tagName
     if (tag === 'INPUT' || tag === 'BUTTON' || tag === 'TEXTAREA') return
@@ -22,14 +31,19 @@
 
   onMounted(() => {
     window.addEventListener('keydown', onKeydown)
-    if (
-      window.matchMedia('(display-mode: standalone)').matches &&
-      screen.orientation?.lock
-    ) {
-      screen.orientation.lock('landscape').catch(() => {})
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') acquireWakeLock()
+    })
+    acquireWakeLock()
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      ;(screen.orientation as unknown as { lock?: (o: string) => Promise<void> })
+        .lock?.('landscape')
+        .catch(() => {})
     }
   })
-  onUnmounted(() => window.removeEventListener('keydown', onKeydown))
+  onUnmounted(() => {
+    window.removeEventListener('keydown', onKeydown)
+  })
 </script>
 
 <template>
