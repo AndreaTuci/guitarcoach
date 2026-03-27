@@ -20,13 +20,6 @@
 
     <div class="flex gap-1 ml-4">
       <RouterLink
-        to="/"
-        class="rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-[var(--color-surface-raised)]"
-        :class="{ 'text-white': $route.name === 'home', 'text-[var(--color-inactive)]': $route.name !== 'home' }"
-      >
-        Dashboard
-      </RouterLink>
-      <RouterLink
         to="/program"
         class="rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-[var(--color-surface-raised)]"
         :class="{ 'text-white': $route.name === 'program', 'text-[var(--color-inactive)]': $route.name !== 'program' }"
@@ -42,13 +35,31 @@
       </RouterLink>
     </div>
 
-    <button
-      class="ml-auto rounded-md border border-[var(--color-border)] px-2 py-1 font-mono text-xs text-[var(--color-inactive)] transition-colors hover:border-[var(--color-accent)] hover:text-white"
-      aria-label="Show keyboard shortcuts"
-      title="Keyboard shortcuts"
-      @click="ui.toggleShortcuts"
-    >
-      ?
-    </button>
+    <div class="flex items-center gap-2 ml-auto">
+      <button
+        class="rounded-md border p-1.5 transition-colors hover:border-[var(--color-accent)] hover:text-white"
+        :class="ui.isMetronomePanelOpen
+          ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
+          : 'border-[var(--color-border)] text-[var(--color-inactive)]'"
+        aria-label="Toggle metronome"
+        title="Metronome"
+        @click="ui.toggleMetronomePanel"
+      >
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2.5 13 L7 1 L11.5 13" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          <line x1="4" y1="13" x2="10" y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="7" y1="3.5" x2="10.5" y2="10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+
+      <button
+        class="rounded-md border border-[var(--color-border)] px-2 py-1 font-mono text-xs text-[var(--color-inactive)] transition-colors hover:border-[var(--color-accent)] hover:text-white"
+        aria-label="Show keyboard shortcuts"
+        title="Keyboard shortcuts"
+        @click="ui.toggleShortcuts"
+      >
+        ?
+      </button>
+    </div>
   </nav>
 </template>

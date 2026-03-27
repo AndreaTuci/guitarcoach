@@ -27,27 +27,18 @@
 
 <template>
   <div
+    v-show="ui.isMetronomePanelOpen"
     class="fixed bottom-5 right-5 z-50 w-60 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-xl"
     role="region"
     aria-label="Metronome"
   >
-    <div class="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-2.5">
+    <div class="border-b border-[var(--color-border)] px-4 py-2.5">
       <span class="font-mono text-xs font-semibold uppercase tracking-widest text-[var(--color-inactive)]">
         Metronome
       </span>
-      <button
-        class="text-xs text-[var(--color-inactive)] hover:text-white transition-colors"
-        :aria-label="ui.isMetronomePanelOpen ? 'Collapse metronome' : 'Expand metronome'"
-        @click="ui.toggleMetronomePanel"
-      >
-        {{ ui.isMetronomePanelOpen ? '▾' : '▸' }}
-      </button>
     </div>
 
-    <div
-      v-show="ui.isMetronomePanelOpen"
-      class="px-4 py-4 space-y-4"
-    >
+    <div class="px-4 py-4 space-y-4">
       <div class="flex items-center justify-between">
         <span
           class="font-mono text-4xl font-bold text-white tabular-nums"

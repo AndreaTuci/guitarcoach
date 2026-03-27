@@ -3,6 +3,7 @@
   import { RouterView } from 'vue-router'
   import NavigationBar from '@/components/organisms/NavigationBar.vue'
   import KeyboardShortcutsOverlay from '@/components/organisms/KeyboardShortcutsOverlay.vue'
+  import MetronomePanel from '@/components/organisms/MetronomePanel.vue'
   import { useUiStore } from '@/stores/ui'
 
   const ui = useUiStore()
@@ -38,5 +39,6 @@
       <RouterView />
     </main>
     <KeyboardShortcutsOverlay />
+    <MetronomePanel />
   </div>
 </template>

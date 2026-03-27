@@ -8,7 +8,6 @@
   import { useExerciseSession } from '@/composables/useExerciseSession'
   import ChordBadge from '@/components/atoms/ChordBadge.vue'
   import BpmBadge from '@/components/atoms/BpmBadge.vue'
-  import MetronomePanel from '@/components/organisms/MetronomePanel.vue'
   import AudioStatusBar from '@/components/organisms/AudioStatusBar.vue'
   import ChordDisplay from '@/components/molecules/ChordDisplay.vue'
   import BeatLane from '@/components/organisms/BeatLane.vue'
@@ -85,7 +84,7 @@
     if (nextExercise.value) {
       router.push({ name: 'exercise', params: { id: nextExercise.value.id } })
     } else {
-      router.push({ name: 'home' })
+      router.push({ name: 'program' })
     }
   }
 </script>
@@ -279,6 +278,4 @@
       Exercise not found.
     </p>
   </div>
-
-  <MetronomePanel />
 </template>

@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 export const useUiStore = defineStore('ui', () => {
-  const isMetronomePanelOpen = ref(true)
+  const isMetronomePanelOpen = ref(false)
   const isShortcutsOpen = ref(false)
 
   function toggleMetronomePanel(): void {
