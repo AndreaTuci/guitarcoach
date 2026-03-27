@@ -12,6 +12,7 @@
   const canvasRef = ref<HTMLCanvasElement | null>(null)
   let ctx2d: CanvasRenderingContext2D | null = null
   let rafId: number | null = null
+  let ro: ResizeObserver | null = null
 
   const PIXELS_PER_BEAT = 60
   const HIT_ZONE_X_RATIO = 0.22
@@ -23,10 +24,10 @@
   const BALL_FLOOR_Y = BLOCK_Y + BLOCK_H - BALL_R - 4
   const BALL_CEIL_Y = BLOCK_Y + BALL_R + 4
 
-  function resize() {
+  function resize(width?: number) {
     const canvas = canvasRef.value
     if (!canvas) return
-    canvas.width = canvas.offsetWidth
+    canvas.width = width ?? canvas.offsetWidth
     canvas.height = CANVAS_H
   }
 
@@ -64,9 +65,9 @@
 
     drawGuitarNeck(W)
 
-    if (props.isRunning && props.startAudioTime > 0) {
+    if (props.isRunning) {
       const now = getAudioContext().currentTime
-      const elapsed = now - props.startAudioTime
+      const elapsed = Math.max(0, now - props.startAudioTime)
 
       // Scrolling bar blocks
       const firstBarN = Math.max(0, Math.floor((elapsed - hitX / scrollSpeed) / barDuration) - 1)
@@ -170,14 +171,17 @@
     const canvas = canvasRef.value
     if (!canvas) return
     ctx2d = canvas.getContext('2d')
-    resize()
-    window.addEventListener('resize', resize)
+    ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width
+      if (w) resize(w)
+    })
+    ro.observe(canvas.parentElement ?? canvas)
     startLoop()
   })
 
   onUnmounted(() => {
     stopLoop()
-    window.removeEventListener('resize', resize)
+    ro?.disconnect()
   })
 </script>
 

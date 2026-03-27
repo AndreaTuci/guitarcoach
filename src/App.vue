@@ -35,7 +35,7 @@
 <template>
   <div class="min-h-screen bg-[var(--color-background)]">
     <NavigationBar />
-    <main>
+    <main :class="ui.isMetronomePanelOpen ? 'pb-[216px]' : ''">
       <RouterView />
     </main>
     <KeyboardShortcutsOverlay />
